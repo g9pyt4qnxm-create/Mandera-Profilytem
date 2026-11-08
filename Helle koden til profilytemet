@@ -1,0 +1,421 @@
+import { useEffect, useState } from 'react'
+import type { FormEvent, ReactNode } from 'react'
+import './styles.css'
+import { GatheringAdmin, dateLine, fetchGatherings, formatDate, fullTitle, gatheringArchiveBody, placeLine, type Gathering } from './gatherings'
+import { emptyMemberProfiles, interestedProfile, memberProfile, type InvitationType, type PersonalInvitation, type ProfileData, type ProfileKind } from './memberModels'
+
+type Page =
+type NewsletterEntry = {
+  id: string
+  title: string
+  category: 'Nyhetsbrev' | 'Invitasjon'
+  category: 'Nyhetsbrev' | 'Invitasjon' | 'Samling'
+  body: string
+  sourceProfileId?: string
+  sourceName?: string
+  home: '/',
+  profile: '/min-profil',
+  gatherings: '/samlinger',
+  event: '/samlinger/forjulssamling-sommerro',
+  event: '/samlinger/samling',
+  newsletter: '/nyhetsbrev',
+  'interested-profile': '/interesseprofil',
+  admin: '/admin',
+      <div className="footer-links">
+        <button onClick={() => navigateTo('home', setPage)}>Hjemmeside</button>
+        <button onClick={() => navigateTo('profile', setPage)}>Min profil</button>
+        {kind === 'member' && memberProfile.canViewGatherings && <button onClick={() => navigateTo('gatherings', setPage)}>Samlinger</button>}
+        <button onClick={() => navigateTo('newsletter', setPage)}>Nyhetsbrev</button>
+        <button onClick={() => navigateTo('gatherings', setPage)}>Kommende samlinger</button>
+      </div>
+      <small>© Mandera Partners Group · Medlemsside</small>
+    </footer>
+  }
+}
+
+function Admin({ setPage, setProfileId, profiles, setProfiles, newsletterEntries, setNewsletterEntries }: { setPage: (page: Page) => void; setProfileId: (id: string) => void; profiles: ProfileData[]; setProfiles: (profiles: ProfileData[]) => void; newsletterEntries: NewsletterEntry[]; setNewsletterEntries: (entries: NewsletterEntry[]) => void }) {
+function Admin({ setPage, setProfileId, profiles, setProfiles, newsletterEntries, setNewsletterEntries, gatherings, reloadGatherings }: { setPage: (page: Page) => void; setProfileId: (id: string) => void; profiles: ProfileData[]; setProfiles: (profiles: ProfileData[]) => void; newsletterEntries: NewsletterEntry[]; setNewsletterEntries: (entries: NewsletterEntry[]) => void; gatherings: Gathering[]; reloadGatherings: () => Promise<void> }) {
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draft, setDraft] = useState<ProfileData | null>(null)
+            </article>
+          ))}
+        </div>
+        <GatheringAdmin gatherings={gatherings} onChange={reloadGatherings} />
+        <section className="admin-newsletter-archive">
+          <div className="admin-newsletter-heading">
+            <div><p className="eyebrow">Oversikt og arkiv</p><h2>Nyhetsbrevoversikt<span>.</span></h2><p>Aktive: {activeNewsletters.length} · Arkivert: {archivedNewsletters.length}</p></div>
+  )
+}
+
+function Profile({ setPage, kind = 'member', profile, onContinueInvitation }: { setPage: (page: Page) => void; kind?: ProfileKind; profile?: ProfileData; onContinueInvitation?: (profileId: string) => void }) {
+function Profile({ setPage, kind = 'member', profile, onContinueInvitation, gatherings = [], openGathering }: { setPage: (page: Page) => void; kind?: ProfileKind; profile?: ProfileData; onContinueInvitation?: (profileId: string) => void; gatherings?: Gathering[]; openGathering: (id: number) => void }) {
+  const data: ProfileData = profile ?? (kind === 'interested' ? interestedProfile : memberProfile)
+  const isInterested = data.kind === 'interested'
+  const isNotRegistered = data.fullName === 'Ikke registrert'
+          <div className="profile-detail-block profile-detail-block--soft"><p className="eyebrow">Kontaktinformasjon</p><div className="contact-grid"><div><span className="label">E-post</span><strong>{data.email}</strong></div><div><span className="label">Telefon</span><strong>{data.phone}</strong></div></div></div>
+        </div>
+      </section>
+      <section className="section-shell profile-footer-links">{data.canViewGatherings ? <button onClick={() => navigateTo('gatherings', setPage)}>Se kommende samling <Arrow /></button> : <button onClick={() => navigateTo('newsletter', setPage)}>Se nyhetsbrev <Arrow /></button>}<button onClick={() => navigateTo('home', setPage)}>Tilbake til oversikten <Arrow /></button><button className="admin-profile-link" onClick={() => navigateTo('admin', setPage)}>Administrasjonspanel <Arrow /></button></section>
+      <section className="section-shell profile-footer-links">{data.canViewGatherings ? <button onClick={() => navigateTo('gatherings', setPage)}>Se kommende samling <Arrow /></button> : <button onClick={() => navigateTo('newsletter', setPage)}>Se nyhetsbrev <Arrow /></button>}<button onClick={() => navigateTo('home', setPage)}>Tilbake til oversikten <Arrow /></button></section>
+      {!isInterested && <UpcomingGatherings gatherings={gatherings} openGathering={openGathering} />}
+      {isPrivateProfile && data.invitation?.active && profile?.profileId && onContinueInvitation && <InvitationModal profile={data} onContinue={() => onContinueInvitation(profile.profileId!)} />}
+    </main>
+  )
+  )
+}
+
+function Gatherings({ setPage }: { setPage: (page: Page) => void }) {
+function activeGatherings(gatherings: Gathering[]) {
+  return gatherings.filter((item) => item.status !== 'archived').sort((a, b) => (a.eventDate || '9999').localeCompare(b.eventDate || '9999'))
+}
+
+function GatheringTitle({ gathering }: { gathering: Gathering }) {
+  return <>{gathering.title}{gathering.titleAccent && <><br /><em>{gathering.titleAccent}</em></>}</>
+}
+
+function UpcomingGatherings({ gatherings, openGathering }: { gatherings: Gathering[]; openGathering: (id: number) => void }) {
+  const upcoming = activeGatherings(gatherings)
+  return (
+    <section className="section-shell profile-upcoming">
+      <p className="eyebrow">Samlingene</p>
+      <h2>Kommende <em>samlinger.</em></h2>
+      {upcoming.length === 0 ? <p>Ingen kommende samlinger akkurat nå.</p> : <div className="profile-upcoming-list">{upcoming.map((gathering) => <button className="profile-upcoming-card" key={gathering.id} onClick={() => openGathering(gathering.id)}><div style={{ backgroundImage: `url(${gathering.images[0] ?? images.sommerro})` }} /><span><span className="label">{dateLine(gathering)}</span><strong>{fullTitle(gathering)}</strong><small>{placeLine(gathering)}</small><span className="text-button">Se praktisk informasjon <Arrow /></span></span></button>)}</div>}
+    </section>
+  )
+}
+
+function Gatherings({ gatherings, openGathering }: { gatherings: Gathering[]; openGathering: (id: number) => void }) {
+  const upcoming = activeGatherings(gatherings)
+  return (
+    <main className="page">
+      <section className="compact-page-header section-shell">
+        <h1>Kommende <em>samlinger.</em></h1>
+        <p>Praktisk informasjon om neste MPG-samling, samlet på ett sted.</p>
+      </section>
+      {upcoming.length === 0 && <section className="section-shell featured-event"><p>Ingen kommende samlinger akkurat nå.</p></section>}
+      {upcoming.map((gathering, index) => {
+        const [day, ...restDate] = formatDate(gathering.eventDate).split(' ')
+        return (
+      <section className="section-shell featured-event">
+        <div className="featured-event-image" style={{ backgroundImage: `url(${images.sommerro})` }}><span className="image-badge">Din neste samling</span><span className="photo-caption">Sommerro · Oslo</span></div>
+        <div className="featured-event-copy"><p className="eyebrow">Neste MPG-samling</p><h2>Førjulssamling<br /><em>på Sommerro</em></h2><div className="event-meta event-meta--stacked"><span><b>12.</b> desember 2026 · 11:30</span><span>Sommerro, Oslo</span><span>Oppmøte: Café Lucy i resepsjonen</span><span>Pris: Gjelder egen meny</span></div><p>Vi kickstarter førjulstiden med en eksklusiv opplevelse på Sommerro. Gjennom en omvisning får deltakerne et nærmere innblikk i hotellets historie, arkitektur og elegante interiører. Omvisningen etterfølges av julebrunsj.</p><button className="button button--burgundy" onClick={() => navigateTo('event', setPage)}>Se praktisk informasjon <Arrow /></button></div>
+      </section>
+          <section className="section-shell featured-event" key={gathering.id}>
+            <div className="featured-event-image" style={{ backgroundImage: `url(${gathering.images[0] ?? images.sommerro})` }}><span className="image-badge">{index === 0 ? 'Din neste samling' : 'Kommende samling'}</span>{placeLine(gathering) && <span className="photo-caption">{[gathering.place, gathering.address].filter(Boolean).join(' · ')}</span>}</div>
+            <div className="featured-event-copy"><p className="eyebrow">{index === 0 ? 'Neste MPG-samling' : 'MPG-samling'}</p><h2><GatheringTitle gathering={gathering} /></h2><div className="event-meta event-meta--stacked">{gathering.eventDate && <span><b>{day}</b> {restDate.join(' ')}{gathering.eventTime && ` · ${gathering.eventTime}`}</span>}{placeLine(gathering) && <span>{placeLine(gathering)}</span>}{gathering.meetingPoint && <span>Oppmøte: {gathering.meetingPoint}</span>}{gathering.price && <span>Pris: {gathering.price}</span>}</div>{gathering.summary && <p>{gathering.summary}</p>}<button className="button button--burgundy" onClick={() => openGathering(gathering.id)}>Se praktisk informasjon <Arrow /></button></div>
+          </section>
+        )
+      })}
+    </main>
+  )
+}
+
+function RegistrationForm() {
+function RegistrationForm({ gathering }: { gathering: Gathering }) {
+  const [attendance, setAttendance] = useState<'Deltar' | 'Deltar ikke'>('Deltar')
+  const [message, setMessage] = useState('')
+  const [showGuestInfo, setShowGuestInfo] = useState(false)
+
+  function sendRegistration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const subject = `Påmelding – Førjulssamling på Sommerro – ${member.fullName}`
+    const subject = `Påmelding – ${fullTitle(gathering)} – ${member.fullName}`
+    const body = [
+      `Navn: ${member.fullName}`,
+      `Medlemsnummer: ${member.number}`,
+      `Samling: Førjulssamling på Sommerro`,
+      `Dato: 12. desember 2026 kl. 11:30`,
+      `Samling: ${fullTitle(gathering)}`,
+      `Dato: ${formatDate(gathering.eventDate)}${gathering.eventTime ? ` kl. ${gathering.eventTime}` : ''}`,
+      `Svar: ${attendance}`,
+      '',
+      'Personlig melding:',
+  )
+}
+
+function EventDetail({ setPage }: { setPage: (page: Page) => void }) {
+function EventDetail({ setPage, gathering }: { setPage: (page: Page) => void; gathering?: Gathering }) {
+  if (!gathering) return <main className="page"><section className="compact-page-header section-shell"><h1>Samlingen finnes ikke.</h1><button className="back-link" onClick={() => navigateTo('gatherings', setPage)}>← Tilbake til samlinger</button></section></main>
+  const photos = gathering.images.slice(1, 3)
+  return (
+    <main className="page">
+      <section className="event-detail-hero"><div className="event-detail-image" style={{ backgroundImage: `url(${images.sommerro})` }} /><div className="event-detail-shade" /><div className="event-detail-inner"><button className="back-link" onClick={() => navigateTo('gatherings', setPage)}>← Tilbake til samlinger</button><span className="image-badge">Kommende samling</span><h1>Førjulssamling<br /><em>på Sommerro</em></h1><div className="detail-meta"><span>12. desember 2026 · 11:30</span><span>Sommerro, Oslo</span></div></div></section>
+      <section className="section-shell event-detail-layout"><div className="event-detail-copy"><p className="eyebrow">Praktisk informasjon</p><h2>Det viktigste<br /><em>før du velger.</em></h2><p>Vi kickstarter førjulstiden med en eksklusiv opplevelse på Sommerro. Gjennom en omvisning får deltakerne et nærmere innblikk i hotellets historie, arkitektur og elegante interiører, og opplever hva som gjør Sommerro til et av Oslos mest særpregede hoteller.</p><p>Omvisningen etterfølges av julebrunsj, hvor deltakerne får nyte en god matopplevelse og tid til gode samtaler.</p><div className="detail-photo-grid"><div style={{ backgroundImage: `url(${images.sommerroLobby})` }} /><div style={{ backgroundImage: `url(${images.britannia})` }} /></div></div><aside className="event-facts"><div><span className="label">Dato</span><strong>12. desember 2026</strong></div><div><span className="label">Sted</span><strong>Sommerro<br />Oslo</strong></div><div><span className="label">Oppmøte</span><strong>Café Lucy<br />i resepsjonen</strong></div><div><span className="label">Tidspunkt</span><strong>11:30</strong></div><div><span className="label">Pris</span><strong>Gjelder egen meny</strong></div><div><span className="label">Påmeldingsfrist</span><strong>21. november 2026</strong></div><RegistrationForm /></aside></section>
+      <section className="event-detail-hero"><div className="event-detail-image" style={{ backgroundImage: `url(${gathering.images[0] ?? images.sommerro})` }} /><div className="event-detail-shade" /><div className="event-detail-inner"><button className="back-link" onClick={() => navigateTo('gatherings', setPage)}>← Tilbake til samlinger</button><span className="image-badge">{gathering.status === 'archived' ? 'Arkivert samling' : 'Kommende samling'}</span><h1><GatheringTitle gathering={gathering} /></h1><div className="detail-meta">{dateLine(gathering) && <span>{dateLine(gathering)}</span>}{placeLine(gathering) && <span>{placeLine(gathering)}</span>}</div></div></section>
+      <section className="section-shell event-detail-layout"><div className="event-detail-copy"><p className="eyebrow">Praktisk informasjon</p><h2>Det viktigste<br /><em>før du velger.</em></h2>{(gathering.description || gathering.summary).split('\n').filter((line) => line.trim()).map((line, index) => <p key={index}>{line}</p>)}{gathering.practicalInfo && <div className="event-extra-info"><p className="eyebrow">Praktisk info</p><p>{gathering.practicalInfo}</p></div>}{gathering.otherInfo && <div className="event-extra-info"><p className="eyebrow">Annen informasjon</p><p>{gathering.otherInfo}</p></div>}{photos.length > 0 && <div className="detail-photo-grid">{photos.map((photo, index) => <div key={index} style={{ backgroundImage: `url(${photo})` }} />)}</div>}</div><aside className="event-facts">{gathering.eventDate && <div><span className="label">Dato</span><strong>{formatDate(gathering.eventDate)}</strong></div>}{(gathering.place || gathering.address) && <div><span className="label">Sted</span><strong>{gathering.place}{gathering.place && gathering.address && <br />}{gathering.address}</strong></div>}{gathering.meetingPoint && <div><span className="label">Oppmøte</span><strong>{gathering.meetingPoint}</strong></div>}{gathering.eventTime && <div><span className="label">Tidspunkt</span><strong>{gathering.eventTime}</strong></div>}{gathering.price && <div><span className="label">Pris</span><strong>{gathering.price}</strong></div>}{gathering.deadline && <div><span className="label">Påmeldingsfrist</span><strong>{formatDate(gathering.deadline)}</strong></div>}{gathering.status !== 'archived' && <RegistrationForm gathering={gathering} />}</aside></section>
+    </main>
+  )
+}
+
+function Newsletter({ setPage, entries }: { setPage: (page: Page) => void; entries: NewsletterEntry[] }) {
+function Newsletter({ setPage, entries, gatherings = [] }: { setPage: (page: Page) => void; entries: NewsletterEntry[]; gatherings?: Gathering[] }) {
+  const [selectedEntry, setSelectedEntry] = useState<NewsletterEntry | null>(null)
+  const [showArchive, setShowArchive] = useState(false)
+  const publicNews = entries.filter((entry) => entry.category === 'Nyhetsbrev' && !entry.archived)
+  const archiveEntries = entries.filter((entry) => entry.category === 'Nyhetsbrev' && entry.archived)
+  const gatheringArchive: NewsletterEntry[] = gatherings.filter((item) => item.status === 'archived').map((item) => ({ id: `gathering-${item.id}`, title: fullTitle(item), category: 'Samling', body: gatheringArchiveBody(item), createdAt: item.archivedAt ?? item.createdAt, archived: true, image: item.images[0] }))
+  const archiveEntries = [...entries.filter((entry) => entry.category === 'Nyhetsbrev' && entry.archived), ...gatheringArchive].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  return (
+    <main className="page">
+      <section className="newsletter-page section-shell">
+}
+
+function App() {
+  const [page, setPage] = useState<Page>('home')
+  const [profileId, setProfileId] = useState<string | null>(null)
+  const [page, setPage] = useState<Page>(() => window.location.pathname.startsWith('/medlem/') ? 'home' : 'admin')
+  const [gatherings, setGatherings] = useState<Gathering[]>([])
+  const [gatheringId, setGatheringId] = useState<number | null>(null)
+  const [profileId, setProfileId] = useState<string | null>(getInitialProfileId)
+  const [profiles, setProfiles] = useState<ProfileData[]>(loadAdminProfiles)
+  const [newsletterEntries, setNewsletterEntries] = useState<NewsletterEntry[]>(loadNewsletterEntries)
+  const [showWelcome, setShowWelcome] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowWelcome(false), 2600)
+    const loader = window.setTimeout(() => setIsLoading(false), 260)
+    if (window.location.pathname !== '/') window.history.replaceState({ page: 'home' }, '', '/')
+    void reloadGatherings()
+    if (!window.location.pathname.startsWith('/medlem/') && window.location.pathname !== '/admin') window.history.replaceState({ page: 'admin' }, '', '/admin')
+    const pop = () => { setPage(getInitialPage()); setProfileId(getInitialProfileId()) }
+    window.addEventListener('popstate', pop)
+    return () => { window.clearTimeout(timer); window.clearTimeout(loader); window.removeEventListener('popstate', pop) }
+    if (page === 'home' && window.location.pathname === '/') setProfileId(null)
+  }, [page])
+
+  async function reloadGatherings() {
+    try { setGatherings(await fetchGatherings()) } catch { /* behold forrige liste */ }
+  }
+  function openGathering(id: number) {
+    setGatheringId(id)
+    navigateTo('event', setPage)
+  }
+  function continueInvitation(profileIdToUpdate: string) {
+    const profile = profiles.find((item) => item.profileId === profileIdToUpdate)
+    const invitation = profile?.invitation
+  return <div className={`app ${isLoading ? 'app--loading' : ''}`}>
+    <Header setPage={setPage} profile={activeProfile} />
+    {page === 'home' && <Home setPage={setPage} profile={activeProfile} />}
+    {page === 'profile' && <Profile setPage={setPage} kind="member" profile={activeProfile} onContinueInvitation={continueInvitation} />}
+    {page === 'interested-profile' && <Profile setPage={setPage} kind="interested" />}
+    {page === 'gatherings' && <Gatherings setPage={setPage} />}
+    {page === 'event' && <EventDetail setPage={setPage} />}
+    {page === 'newsletter' && <Newsletter setPage={setPage} entries={newsletterEntries} />}
+    {page === 'admin' && <Admin setPage={setPage} setProfileId={setProfileId} profiles={profiles} setProfiles={setProfiles} newsletterEntries={newsletterEntries} setNewsletterEntries={setNewsletterEntries} />}
+    {page === 'profile' && <Profile setPage={setPage} kind="member" profile={activeProfile} onContinueInvitation={continueInvitation} gatherings={gatherings} openGathering={openGathering} />}
+    {page === 'interested-profile' && <Profile setPage={setPage} kind="interested" openGathering={openGathering} />}
+    {page === 'gatherings' && <Gatherings gatherings={gatherings} openGathering={openGathering} />}
+    {page === 'event' && <EventDetail setPage={setPage} gathering={gatherings.find((item) => item.id === gatheringId) ?? activeGatherings(gatherings)[0]} />}
+    {page === 'newsletter' && <Newsletter setPage={setPage} entries={newsletterEntries} gatherings={gatherings} />}
+    {page === 'admin' && <Admin setPage={setPage} setProfileId={setProfileId} profiles={profiles} setProfiles={setProfiles} newsletterEntries={newsletterEntries} setNewsletterEntries={setNewsletterEntries} gatherings={gatherings} reloadGatherings={reloadGatherings} />}
+    <Footer kind={profileKind} setPage={setPage} />
+  </div>
+}
+
+src/gatherings.tsx
+added
++182
+import { useState } from 'react'
+
+export type Gathering = {
+  id: number
+  title: string
+  titleAccent: string
+  summary: string
+  description: string
+  images: string[]
+  eventDate: string
+  eventTime: string
+  place: string
+  address: string
+  meetingPoint: string
+  practicalInfo: string
+  price: string
+  deadline: string
+  otherInfo: string
+  status: 'active' | 'archived'
+  createdAt: string
+  archivedAt: string | null
+}
+
+type GatheringDraft = Omit<Gathering, 'id' | 'status' | 'createdAt' | 'archivedAt'>
+
+const emptyDraft: GatheringDraft = { title: '', titleAccent: '', summary: '', description: '', images: [], eventDate: '', eventTime: '', place: '', address: '', meetingPoint: '', practicalInfo: '', price: '', deadline: '', otherInfo: '' }
+
+const API = '/api/gatherings'
+
+export async function fetchGatherings(): Promise<Gathering[]> {
+  const response = await fetch(API)
+  if (!response.ok) throw new Error('Kunne ikke hente samlinger')
+  return response.json()
+}
+
+async function send(method: string, body?: unknown, query = '') {
+  const response = await fetch(`${API}${query}`, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+  if (!response.ok) throw new Error('Lagring feilet')
+}
+
+export function formatDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+  return new Date(`${value}T12:00:00`).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+export function fullTitle(gathering: Gathering) {
+  return [gathering.title, gathering.titleAccent].filter(Boolean).join(' ')
+}
+
+export function placeLine(gathering: Gathering) {
+  return [gathering.place, gathering.address].filter(Boolean).join(', ')
+}
+
+export function dateLine(gathering: Gathering) {
+  return [formatDate(gathering.eventDate), gathering.eventTime].filter(Boolean).join(' · ')
+}
+
+export function gatheringArchiveBody(gathering: Gathering) {
+  const facts = [dateLine(gathering), placeLine(gathering), gathering.meetingPoint && `Oppmøte: ${gathering.meetingPoint}`, gathering.price && `Pris: ${gathering.price}`].filter(Boolean)
+  const sections = [gathering.description || gathering.summary, gathering.practicalInfo && `Praktisk informasjon\n${gathering.practicalInfo}`, gathering.otherInfo && `Annen informasjon\n${gathering.otherInfo}`].filter(Boolean)
+  return [facts.join('\n'), ...sections].filter(Boolean).join('\n\n')
+}
+
+async function compressImage(file: File) {
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, 1400 / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+  canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+  return canvas.toDataURL('image/jpeg', 0.75)
+}
+
+export function GatheringAdmin({ gatherings, onChange }: { gatherings: Gathering[]; onChange: () => Promise<void> }) {
+  const [draft, setDraft] = useState<GatheringDraft>(emptyDraft)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [busy, setBusy] = useState(false)
+  const active = gatherings.filter((item) => item.status !== 'archived')
+  const archived = gatherings.filter((item) => item.status === 'archived')
+
+  function update(field: keyof GatheringDraft, value: string) {
+    setDraft({ ...draft, [field]: value })
+  }
+
+  async function addImages(files: FileList | null) {
+    if (!files) return
+    const next = [...draft.images]
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/') || next.length >= 4) continue
+      try { next.push(await compressImage(file)) } catch { window.alert('Et bilde kunne ikke lastes inn.') }
+    }
+    setDraft({ ...draft, images: next })
+  }
+
+  async function run(action: () => Promise<void>) {
+    setBusy(true)
+    try {
+      await action()
+      await onChange()
+    } catch {
+      window.alert('Noe gikk galt. Prøv igjen.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function save() {
+    if (!draft.title.trim()) {
+      window.alert('Legg inn tittel.')
+      return
+    }
+    void run(async () => {
+      if (editingId) await send('PATCH', { ...draft, id: editingId })
+      else await send('POST', draft)
+      setDraft(emptyDraft)
+      setEditingId(null)
+    })
+  }
+
+  function startEdit(gathering: Gathering) {
+    const { id, status, createdAt, archivedAt, ...rest } = gathering
+    void status; void createdAt; void archivedAt
+    setDraft({ ...emptyDraft, ...rest })
+    setEditingId(id)
+    document.getElementById('gathering-form')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  function setArchived(gathering: Gathering, isArchived: boolean) {
+    void run(() => send('PATCH', { id: gathering.id, status: isArchived ? 'archived' : 'active' }))
+  }
+
+  function remove(gathering: Gathering) {
+    if (!window.confirm(`Slette «${fullTitle(gathering)}» permanent? Den fjernes fra alle profiler, oversikter og arkivet.`)) return
+    void run(() => send('DELETE', undefined, `?id=${gathering.id}`))
+  }
+
+  const item = (gathering: Gathering) => (
+    <article className="admin-newsletter-item" key={gathering.id}>
+      <div className="admin-newsletter-item-copy"><span className="label">{gathering.status === 'archived' ? 'Arkivert samling' : 'Kommende samling'}</span><h3>{fullTitle(gathering)}</h3><small>{dateLine(gathering) || 'Dato ikke satt'} · {placeLine(gathering) || 'Sted ikke satt'}</small></div>
+      <div className="admin-newsletter-item-actions">
+        <button className="admin-copy" disabled={busy} onClick={() => startEdit(gathering)}>Rediger</button>
+        {gathering.status === 'archived' ? <button className="admin-copy" disabled={busy} onClick={() => setArchived(gathering, false)}>Gjenopprett</button> : <button className="admin-copy" disabled={busy} onClick={() => setArchived(gathering, true)}>Arkiver</button>}
+        <button className="admin-delete" disabled={busy} onClick={() => remove(gathering)}>Slett</button>
+      </div>
+    </article>
+  )
+
+  return (
+    <>
+      <section className="admin-newsletter-archive">
+        <div className="admin-newsletter-heading"><div><p className="eyebrow">Samlinger</p><h2>Samlingsoversikt<span>.</span></h2><p>Kommende: {active.length} · Arkivert: {archived.length}</p></div></div>
+        {active.length === 0 ? <div className="newsletter-empty"><h3>Ingen kommende samlinger.</h3><p>Nye samlinger vises her og på alle profiler.</p></div> : <div className="admin-newsletter-list">{active.map(item)}</div>}
+        {archived.length > 0 && <div className="admin-newsletter-archive-list"><h3>Arkiverte samlinger</h3><div className="admin-newsletter-list">{archived.map(item)}</div></div>}
+      </section>
+      <section className="admin-newsletter-composer" id="gathering-form">
+        <p className="eyebrow">Samling</p>
+        <h2>{editingId ? 'Rediger samling.' : 'Opprett ny samling.'}</h2>
+        <p>Samlingen vises automatisk under «Kommende samlinger» på alle profiler, med samme oppsett som Sommerro-samlingen.</p>
+        <label>Tittel<input value={draft.title} onChange={(event) => update('title', event.target.value)} placeholder="For eksempel: Førjulssamling" /></label>
+        <label>Undertittel (kursiv)<input value={draft.titleAccent} onChange={(event) => update('titleAccent', event.target.value)} placeholder="For eksempel: på Sommerro" /></label>
+        <label>Kort beskrivelse (oversikt)<textarea value={draft.summary} onChange={(event) => update('summary', event.target.value)} rows={3} /></label>
+        <label>Full beskrivelse (detaljside)<textarea value={draft.description} onChange={(event) => update('description', event.target.value)} rows={5} /></label>
+        <label>Bilder (første bilde er hovedbilde, maks 4)<input type="file" accept="image/*" multiple onChange={(event) => { void addImages(event.target.files); event.target.value = '' }} /></label>
+        {draft.images.length > 0 && <div className="gathering-image-previews">{draft.images.map((image, index) => <div key={index}><img src={image} alt={`Bilde ${index + 1}`} /><button type="button" className="admin-delete" onClick={() => setDraft({ ...draft, images: draft.images.filter((_, i) => i !== index) })}>Fjern</button></div>)}</div>}
+        <label>Dato<input type="date" value={draft.eventDate} onChange={(event) => update('eventDate', event.target.value)} /></label>
+        <label>Klokkeslett<input type="time" value={draft.eventTime} onChange={(event) => update('eventTime', event.target.value)} /></label>
+        <label>Sted<input value={draft.place} onChange={(event) => update('place', event.target.value)} placeholder="For eksempel: Sommerro" /></label>
+        <label>Adresse<input value={draft.address} onChange={(event) => update('address', event.target.value)} placeholder="For eksempel: Oslo" /></label>
+        <label>Oppmøte<input value={draft.meetingPoint} onChange={(event) => update('meetingPoint', event.target.value)} placeholder="For eksempel: Café Lucy i resepsjonen" /></label>
+        <label>Praktisk informasjon<textarea value={draft.practicalInfo} onChange={(event) => update('practicalInfo', event.target.value)} rows={3} /></label>
+        <label>Pris<input value={draft.price} onChange={(event) => update('price', event.target.value)} placeholder="For eksempel: 300–450 kr" /></label>
+        <label>Påmeldingsfrist<input type="date" value={draft.deadline} onChange={(event) => update('deadline', event.target.value)} /></label>
+        <label>Annen relevant informasjon<textarea value={draft.otherInfo} onChange={(event) => update('otherInfo', event.target.value)} rows={3} /></label>
+        <div className="admin-edit-actions">
+          <button className="button button--burgundy" disabled={busy} onClick={save}>{editingId ? 'Lagre endringer' : 'Publiser samling'}</button>
+          {editingId && <button className="admin-cancel" onClick={() => { setEditingId(null); setDraft(emptyDraft) }}>Avbryt</button>}
+        </div>
+      </section>
+    </>
+  )
+}
+
+src/styles.css
+changed
++15
+@media (max-width: 560px) {
+  .admin-newsletter-heading-actions { width: 100%; justify-content: flex-start; }
+}
+
+/* Samlinger */
+.gathering-image-previews { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.gathering-image-previews div { display: grid; gap: 6px; }
+.gathering-image-previews img { width: 100%; height: 90px; object-fit: cover; }
+.event-extra-info { margin-top: 32px; }
+.event-extra-info p:not(.eyebrow) { max-width: 610px; color: var(--muted); font-size: 14px; white-space: pre-line; }
+.profile-upcoming { padding-bottom: 115px; }
+.profile-upcoming h2 { color: var(--burgundy); }
+.profile-upcoming-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; margin-top: 24px; }
+.profile-upcoming-card { display: grid; text-align: left; padding: 0; color: var(--burgundy); background: var(--paper); border: 1px solid var(--line); cursor: pointer; }
+.profile-upcoming-card > div { min-height: 170px; background-position: center; background-size: cover; }
+.profile-upcoming-card > span { display: grid; gap: 6px; padding: 18px 20px 22px; }
+.profile-upcoming-card strong { font-family: var(--serif); font-size: 21px; font-weight: 400; }
+.profile-upcoming-card small { color: var(--muted); font-size: 12px; }
