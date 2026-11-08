@@ -1,3 +1,751 @@
+node_modules
+dist
+.netlify
+
+db/index.ts
+added
++4
+import { drizzle } from 'drizzle-orm/netlify-db'
+import * as schema from './schema.js'
+
+export const db = drizzle({ schema })
+
+db/schema.ts
+added
++22
+import { jsonb, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core'
+
+export const gatherings = pgTable('gatherings', {
+  id: serial().primaryKey(),
+  title: text().notNull(),
+  titleAccent: text('title_accent').notNull().default(''),
+  summary: text().notNull().default(''),
+  description: text().notNull().default(''),
+  images: jsonb().$type<string[]>().notNull().default([]),
+  eventDate: text('event_date').notNull().default(''),
+  eventTime: text('event_time').notNull().default(''),
+  place: text().notNull().default(''),
+  address: text().notNull().default(''),
+  meetingPoint: text('meeting_point').notNull().default(''),
+  practicalInfo: text('practical_info').notNull().default(''),
+  price: text().notNull().default(''),
+  deadline: text().notNull().default(''),
+  otherInfo: text('other_info').notNull().default(''),
+  status: text().notNull().default('active'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  archivedAt: timestamp('archived_at'),
+})
+
+drizzle.config.ts
+added
++7
+import { defineConfig } from 'drizzle-kit'
+
+export default defineConfig({
+  dialect: 'postgresql',
+  schema: './db/schema.ts',
+  out: 'netlify/database/migrations',
+})
+
+netlify.toml
+changed
++5
+[build]
+  command = "pnpm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+netlify/database/migrations/20261108175410_create_gatherings/migration.sql
+added
++20
+CREATE TABLE "gatherings" (
+	"id" serial PRIMARY KEY,
+	"title" text NOT NULL,
+	"title_accent" text DEFAULT '' NOT NULL,
+	"summary" text DEFAULT '' NOT NULL,
+	"description" text DEFAULT '' NOT NULL,
+	"images" jsonb DEFAULT '[]' NOT NULL,
+	"event_date" text DEFAULT '' NOT NULL,
+	"event_time" text DEFAULT '' NOT NULL,
+	"place" text DEFAULT '' NOT NULL,
+	"address" text DEFAULT '' NOT NULL,
+	"meeting_point" text DEFAULT '' NOT NULL,
+	"practical_info" text DEFAULT '' NOT NULL,
+	"price" text DEFAULT '' NOT NULL,
+	"deadline" text DEFAULT '' NOT NULL,
+	"other_info" text DEFAULT '' NOT NULL,
+	"status" text DEFAULT 'active' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"archived_at" timestamp
+);
+
+netlify/database/migrations/20261108175410_create_gatherings/snapshot.json
+added
++261
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "adec64c1-a895-4554-b7cd-8eb2a48faaf8",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "isRlsEnabled": false,
+      "name": "gatherings",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "title_accent",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "summary",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'[]'",
+      "generated": null,
+      "identity": null,
+      "name": "images",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "event_date",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "event_time",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "place",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "address",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "meeting_point",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "practical_info",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "price",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "deadline",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "other_info",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'active'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "archived_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "gatherings_pkey",
+      "schema": "public",
+      "table": "gatherings",
+      "entityType": "pks"
+    }
+  ],
+  "renames": []
+}
+
+netlify/database/migrations/20261108175411_seed_sommerro_gathering/migration.sql
+added
++18
+INSERT INTO "gatherings" ("title", "title_accent", "summary", "description", "images", "event_date", "event_time", "place", "address", "meeting_point", "practical_info", "price", "deadline", "other_info", "status")
+VALUES (
+  'Førjulssamling',
+  'på Sommerro',
+  'Vi kickstarter førjulstiden med en eksklusiv opplevelse på Sommerro. Gjennom en omvisning får deltakerne et nærmere innblikk i hotellets historie, arkitektur og elegante interiører. Omvisningen etterfølges av julebrunsj.',
+  E'Vi kickstarter førjulstiden med en eksklusiv opplevelse på Sommerro. Gjennom en omvisning får deltakerne et nærmere innblikk i hotellets historie, arkitektur og elegante interiører, og opplever hva som gjør Sommerro til et av Oslos mest særpregede hoteller.\nOmvisningen etterfølges av julebrunsj, hvor deltakerne får nyte en god matopplevelse og tid til gode samtaler.',
+  '["/images/ref-08.jpg", "/images/ref-02.jpg", "/images/ref-04.jpg"]'::jsonb,
+  '2026-12-12',
+  '11:30',
+  'Sommerro',
+  'Oslo',
+  'Café Lucy i resepsjonen',
+  '',
+  'Gjelder egen meny',
+  '2026-11-21',
+  '',
+  'active'
+);
+
+netlify/database/migrations/20261108175411_seed_sommerro_gathering/snapshot.json
+added
++261
+{
+  "id": "b723784a-c9fd-4163-b3ea-a5fcafe018d9",
+  "prevIds": [
+    "adec64c1-a895-4554-b7cd-8eb2a48faaf8"
+  ],
+  "version": "8",
+  "dialect": "postgres",
+  "ddl": [
+    {
+      "isRlsEnabled": false,
+      "name": "gatherings",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "title_accent",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "summary",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'[]'",
+      "generated": null,
+      "identity": null,
+      "name": "images",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "event_date",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "event_time",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "place",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "address",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "meeting_point",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "practical_info",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "price",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "deadline",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "other_info",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'active'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "archived_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "gatherings"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "gatherings_pkey",
+      "schema": "public",
+      "table": "gatherings",
+      "entityType": "pks"
+    }
+  ],
+  "renames": []
+}
+
+netlify/functions/gatherings.ts
+added
++58
+import type { Config } from '@netlify/functions'
+import { desc, eq } from 'drizzle-orm'
+import { db } from '../../db/index.js'
+import { gatherings } from '../../db/schema.js'
+
+const textFields = ['title', 'titleAccent', 'summary', 'description', 'eventDate', 'eventTime', 'place', 'address', 'meetingPoint', 'practicalInfo', 'price', 'deadline', 'otherInfo'] as const
+
+function clean(input: Record<string, unknown>) {
+  const values: Record<string, unknown> = {}
+  for (const field of textFields) if (typeof input[field] === 'string') values[field] = (input[field] as string).trim()
+  if (Array.isArray(input.images)) values.images = input.images.filter((image): image is string => typeof image === 'string').slice(0, 6)
+  return values
+}
+
+export default async (req: Request) => {
+  try {
+    if (req.method === 'GET') {
+      const rows = await db.select().from(gatherings).orderBy(desc(gatherings.createdAt))
+      return Response.json(rows)
+    }
+
+    if (req.method === 'POST') {
+      const values = clean(await req.json())
+      if (!values.title) return Response.json({ error: 'Tittel mangler' }, { status: 400 })
+      const [row] = await db.insert(gatherings).values({ ...(values as typeof gatherings.$inferInsert), status: 'active' }).returning()
+      return Response.json(row, { status: 201 })
+    }
+
+    if (req.method === 'PATCH') {
+      const body = await req.json() as Record<string, unknown>
+      const id = Number(body.id)
+      if (!id) return Response.json({ error: 'Ugyldig id' }, { status: 400 })
+      const values = clean(body)
+      if (body.status === 'active' || body.status === 'archived') {
+        values.status = body.status
+        values.archivedAt = body.status === 'archived' ? new Date() : null
+      }
+      const [row] = await db.update(gatherings).set(values).where(eq(gatherings.id, id)).returning()
+      return row ? Response.json(row) : Response.json({ error: 'Fant ikke samlingen' }, { status: 404 })
+    }
+
+    if (req.method === 'DELETE') {
+      const id = Number(new URL(req.url).searchParams.get('id'))
+      if (!id) return Response.json({ error: 'Ugyldig id' }, { status: 400 })
+      await db.delete(gatherings).where(eq(gatherings.id, id))
+      return new Response(null, { status: 204 })
+    }
+
+    return new Response('Method not allowed', { status: 405 })
+  } catch (error) {
+    console.error(error)
+    return Response.json({ error: 'Serverfeil' }, { status: 500 })
+  }
+}
+
+export const config: Config = {
+  path: '/api/gatherings',
+}
+
+package.json
+changed
++11
+-6
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@netlify/database": "^2.0.3",
+    "@netlify/functions": "^6.1.1",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "typescript": "latest",
+    "drizzle-orm": "1.0.0-beta.22",
+    "react": "latest",
+    "react-dom": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {}
+  "devDependencies": {
+    "drizzle-kit": "1.0.0-beta.22"
+  }
+}
+
+pnpm-lock.yaml
+changed
++721
+-5
+Load change
+Large changes are not rendered by default.
+
+
+public/kildekode.txt
+added
++1854
+Load change
+Large changes are not rendered by default.
+
+
+src/App.tsx
+changed
++71
+-29
 import { useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import './styles.css'
@@ -418,4 +1166,4 @@ changed
 .profile-upcoming-card > div { min-height: 170px; background-position: center; background-size: cover; }
 .profile-upcoming-card > span { display: grid; gap: 6px; padding: 18px 20px 22px; }
 .profile-upcoming-card strong { font-family: var(--serif); font-size: 21px; font-weight: 400; }
-.profile-upcoming-card small { color: var(--muted); font-size: 12px; }
+.profile-upcoming-card small { color: var(--muted); font-siz
